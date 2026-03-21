@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>史镜 HistoryBoard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Sora:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <main class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">历史看板 H5 · 第一版</p>
+        <h1>史镜 HistoryBoard</h1>
+        <p class="subtitle">
+          输入任意关键词、人物、朝代或年份，快速定位中国历史事件，并同步比对同一时期的世界关键节点。
+        </p>
+        <div class="search-row">
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="例如：秦始皇 / 商鞅变法 / 1911 / 丝绸之路 / 鸦片战争"
+            autocomplete="off"
+          />
+          <button id="searchBtn">立即检索</button>
+          <button id="randomBtn" class="ghost">随机看看</button>
+        </div>
+        <div id="suggestions" class="chips"></div>
+      </header>
+
+      <section class="dashboard">
+        <aside class="panel results-panel">
+          <div class="panel-head">
+            <h2>检索结果</h2>
+            <span id="resultMeta" class="meta"></span>
+          </div>
+          <div id="resultList" class="result-list"></div>
+        </aside>
+
+        <section class="panel detail-panel">
+          <div class="panel-head">
+            <h2>事件详情 + 同期世界</h2>
+            <span class="meta">点击左侧任一条查看深度信息</span>
+          </div>
+          <article id="detailCard" class="detail-card empty">请先在左侧选择一个历史事件。</article>
+          <div>
+            <h3 class="timeline-title">同期世界关键节点</h3>
+            <div id="worldTimeline" class="world-timeline"></div>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel strip-panel">
+        <div class="panel-head">
+          <h2>中国历史时间带</h2>
+          <span id="stripMeta" class="meta"></span>
+        </div>
+        <div id="timeStrip" class="time-strip"></div>
+      </section>
+    </main>
+
+    <script src="/assets/main.js"></script>
+  </body>
+</html>

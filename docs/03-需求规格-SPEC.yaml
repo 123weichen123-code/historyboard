@@ -1,0 +1,145 @@
+meta:
+  project: historyboard-h5
+  version: v1.0
+  owner: product-team
+  language: zh-CN
+  tech_policy:
+    backend_primary: java
+    data_ingestion_primary: java
+    data_ingestion_fallback: python
+
+scope:
+  in_scope:
+    - history_search
+    - search_suggestions
+    - event_detail
+    - world_context_compare
+    - china_timeline
+    - discover_default
+  out_of_scope:
+    - user_account
+    - cms_backoffice
+    - paid_content
+
+functional_requirements:
+  - id: FR-01
+    name: history_search
+    priority: P0
+    endpoint: GET /api/history/search
+    input:
+      q: string
+      limit: integer(1..30)
+    output:
+      query: string
+      count: integer
+      fallback_used: boolean
+      results: array
+      suggestions: array
+    acceptance:
+      - must_support_keywords_figures_dynasty_year_alias
+      - must_return_ranked_results
+      - should_return_fallback_when_no_match
+
+  - id: FR-02
+    name: search_suggestions
+    priority: P1
+    endpoint: GET /api/history/suggest
+    input:
+      q: string
+      limit: integer(1..30)
+    output:
+      query: string
+      suggestions: array
+
+  - id: FR-03
+    name: event_detail
+    priority: P0
+    endpoint: GET /api/history/events/{event_id}
+    output:
+      id: string
+      title: string
+      dynasty: string
+      period: string
+      summary: string
+      impact: string
+      figures: array
+      tags: array
+      world_context: array
+      sources: array
+      audit_status: string
+      last_verified_at: string
+
+  - id: FR-04
+    name: timeline
+    priority: P1
+    endpoint: GET /api/history/timeline
+    output:
+      count: integer
+      events: array
+
+  - id: FR-05
+    name: discover
+    priority: P1
+    endpoint: GET /api/history/discover
+    output:
+      quick_queries: array
+      default_results: object
+
+non_functional_requirements:
+  - id: NFR-01
+    name: latency
+    target: p95_lt_500ms_local
+  - id: NFR-02
+    name: availability
+    target: single_instance_service
+  - id: NFR-03
+    name: maintainability
+    target: modular_backend_and_documented_data_schema
+
+data_spec:
+  china_event_fields:
+    - id
+    - title
+    - aliases[]
+    - dynasty
+    - start_year
+    - end_year
+    - location
+    - figures[]
+    - summary
+    - impact
+    - category
+    - tags[]
+    - importance
+    - keywords[]
+    - sources[]
+    - audit_status
+    - last_verified_at
+  world_event_fields:
+    - id
+    - title
+    - region
+    - start_year
+    - end_year
+    - summary
+    - sources[]
+    - audit_status
+    - last_verified_at
+
+api_contract:
+  success_code: 200
+  not_found_code: 404
+  validation_code: 422
+
+milestones:
+  - phase: M1
+    deliverables:
+      - docs
+      - java_api_skeleton
+      - frontend_h5
+      - seed_data
+  - phase: M2
+    deliverables:
+      - java_ingestion_connectors
+      - source_references
+      - quality_audit_pipeline

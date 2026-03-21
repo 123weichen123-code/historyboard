@@ -1,0 +1,301 @@
+[ {
+  "id" : "egypt_unification",
+  "title" : "古埃及早王朝统一",
+  "region" : "非洲",
+  "start_year" : -3100,
+  "end_year" : -3000,
+  "summary" : "尼罗河流域形成早期统一王权。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "hammurabi_code",
+  "title" : "《汉谟拉比法典》",
+  "region" : "西亚",
+  "start_year" : -1754,
+  "end_year" : -1754,
+  "summary" : "两河流域出现成体系成文法典。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "athenian_democracy",
+  "title" : "雅典民主改革",
+  "region" : "欧洲",
+  "start_year" : -508,
+  "end_year" : -507,
+  "summary" : "克里斯提尼改革强化公民政治参与。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "alexander_campaign",
+  "title" : "亚历山大东征",
+  "region" : "欧亚",
+  "start_year" : -334,
+  "end_year" : -323,
+  "summary" : "希腊化文明在欧亚多地扩散。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "roman_empire",
+  "title" : "罗马帝国建立",
+  "region" : "欧洲",
+  "start_year" : -27,
+  "end_year" : -27,
+  "summary" : "屋大维成为奥古斯都，帝国体制形成。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "silk_road_trade",
+  "title" : "欧亚丝路贸易繁荣",
+  "region" : "欧亚",
+  "start_year" : 50,
+  "end_year" : 220,
+  "summary" : "罗马、波斯与东方的商贸连接持续增强。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "fall_west_rome",
+  "title" : "西罗马帝国灭亡",
+  "region" : "欧洲",
+  "start_year" : 476,
+  "end_year" : 476,
+  "summary" : "西欧进入中世纪政治重组阶段。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "islam_foundation",
+  "title" : "伊斯兰教创立",
+  "region" : "西亚",
+  "start_year" : 610,
+  "end_year" : 632,
+  "summary" : "阿拉伯半岛宗教与政治秩序重构。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "charlemagne",
+  "title" : "查理曼加冕",
+  "region" : "欧洲",
+  "start_year" : 800,
+  "end_year" : 800,
+  "summary" : "中世纪西欧帝权与教权关系再定义。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "crusades",
+  "title" : "十字军东征",
+  "region" : "欧亚",
+  "start_year" : 1096,
+  "end_year" : 1291,
+  "summary" : "地中海东西方长期军事与商贸互动。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "magna_carta",
+  "title" : "《大宪章》签署",
+  "region" : "欧洲",
+  "start_year" : 1215,
+  "end_year" : 1215,
+  "summary" : "限制王权、强调法律约束的里程碑。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "black_death",
+  "title" : "黑死病席卷欧亚",
+  "region" : "欧亚",
+  "start_year" : 1347,
+  "end_year" : 1353,
+  "summary" : "人口与劳动力结构剧烈变化。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "renaissance",
+  "title" : "欧洲文艺复兴",
+  "region" : "欧洲",
+  "start_year" : 1350,
+  "end_year" : 1600,
+  "summary" : "人文主义推动艺术、科学和思想创新。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "columbus_voyage",
+  "title" : "哥伦布抵达美洲",
+  "region" : "美洲",
+  "start_year" : 1492,
+  "end_year" : 1492,
+  "summary" : "全球海洋连接与殖民扩张加速。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "reformation",
+  "title" : "宗教改革",
+  "region" : "欧洲",
+  "start_year" : 1517,
+  "end_year" : 1648,
+  "summary" : "欧洲宗教与国家体系长期震荡。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "scientific_revolution",
+  "title" : "科学革命",
+  "region" : "欧洲",
+  "start_year" : 1543,
+  "end_year" : 1700,
+  "summary" : "近代科学方法逐步确立。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "glorious_revolution",
+  "title" : "英国光荣革命",
+  "region" : "欧洲",
+  "start_year" : 1688,
+  "end_year" : 1689,
+  "summary" : "议会政治进一步巩固。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "industrial_revolution",
+  "title" : "工业革命",
+  "region" : "欧洲",
+  "start_year" : 1760,
+  "end_year" : 1840,
+  "summary" : "机器生产和工厂制度重塑全球经济。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "american_revolution",
+  "title" : "美国独立战争",
+  "region" : "美洲",
+  "start_year" : 1775,
+  "end_year" : 1783,
+  "summary" : "近代共和国政治扩散的重要事件。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "french_revolution",
+  "title" : "法国大革命",
+  "region" : "欧洲",
+  "start_year" : 1789,
+  "end_year" : 1799,
+  "summary" : "主权在民与现代政治运动兴起。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "napoleonic_wars",
+  "title" : "拿破仑战争",
+  "region" : "欧洲",
+  "start_year" : 1803,
+  "end_year" : 1815,
+  "summary" : "欧洲秩序重组并影响全球殖民体系。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "us_civil_war",
+  "title" : "美国南北战争",
+  "region" : "美洲",
+  "start_year" : 1861,
+  "end_year" : 1865,
+  "summary" : "工业化国家治理与社会结构重大转折。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "meiji_restoration",
+  "title" : "日本明治维新",
+  "region" : "亚洲",
+  "start_year" : 1868,
+  "end_year" : 1912,
+  "summary" : "东亚近代化与国家转型关键节点。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "ww1",
+  "title" : "第一次世界大战",
+  "region" : "全球",
+  "start_year" : 1914,
+  "end_year" : 1918,
+  "summary" : "帝国体系崩解与国际秩序重建。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "russian_revolution",
+  "title" : "俄国革命",
+  "region" : "欧洲",
+  "start_year" : 1917,
+  "end_year" : 1922,
+  "summary" : "社会主义国家体制建立并扩散。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "great_depression",
+  "title" : "世界经济大萧条",
+  "region" : "全球",
+  "start_year" : 1929,
+  "end_year" : 1939,
+  "summary" : "全球金融危机影响政治与社会稳定。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "ww2",
+  "title" : "第二次世界大战",
+  "region" : "全球",
+  "start_year" : 1939,
+  "end_year" : 1945,
+  "summary" : "全球战争结束后联合国体系形成。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "cold_war",
+  "title" : "冷战格局形成",
+  "region" : "全球",
+  "start_year" : 1947,
+  "end_year" : 1991,
+  "summary" : "两极对抗主导后战后国际政治。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "internet_globalization",
+  "title" : "互联网全球化扩张",
+  "region" : "全球",
+  "start_year" : 1991,
+  "end_year" : 2010,
+  "summary" : "信息网络改变经济、媒体和社会互动。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+}, {
+  "id" : "european_union",
+  "title" : "欧盟成立",
+  "region" : "欧洲",
+  "start_year" : 1993,
+  "end_year" : 1993,
+  "summary" : "欧洲区域一体化进入新阶段。",
+  "audit_status" : "UNVERIFIED",
+  "last_verified_at" : "",
+  "sources" : [ ]
+} ]

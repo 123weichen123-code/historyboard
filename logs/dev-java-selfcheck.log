@@ -1,0 +1,56 @@
+[1/2] 构建历史数据（Java 优先）...
+Generated 41 China events.
+Generated 30 World events.
+[2/2] 启动 Java 后端（包含 H5 前端联调）...
+打开 http://127.0.0.1:18080
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------< com.historyboard:historyboard-java-backend >-------------
+[INFO] Building historyboard-java-backend 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.3.2:run (default-cli) > test-compile @ historyboard-java-backend >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ historyboard-java-backend ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ historyboard-java-backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ historyboard-java-backend ---
+[INFO] skip non existing resourceDirectory /Users/mercury/Documents/ChronoAtlas-HistoryBoard-JavaH5-20260321/java-backend/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ historyboard-java-backend ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] <<< spring-boot:3.3.2:run (default-cli) < test-compile @ historyboard-java-backend <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.3.2:run (default-cli) @ historyboard-java-backend ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.2)
+
+2026-03-21T08:33:27.612-07:00  INFO 338 --- [           main] c.historyboard.HistoryBoardApplication   : Starting HistoryBoardApplication using Java 23.0.2 with PID 338 (/Users/mercury/Documents/ChronoAtlas-HistoryBoard-JavaH5-20260321/java-backend/target/classes started by mercury in /Users/mercury/Documents/ChronoAtlas-HistoryBoard-JavaH5-20260321/java-backend)
+2026-03-21T08:33:27.613-07:00  INFO 338 --- [           main] c.historyboard.HistoryBoardApplication   : No active profile set, falling back to 1 default profile: "default"
+2026-03-21T08:33:28.341-07:00  INFO 338 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18080 (http)
+2026-03-21T08:33:28.348-07:00  INFO 338 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-21T08:33:28.348-07:00  INFO 338 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.26]
+2026-03-21T08:33:28.377-07:00  INFO 338 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-03-21T08:33:28.378-07:00  INFO 338 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 737 ms
+2026-03-21T08:33:28.683-07:00  INFO 338 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18080 (http) with context path '/'
+2026-03-21T08:33:28.689-07:00  INFO 338 --- [           main] c.historyboard.HistoryBoardApplication   : Started HistoryBoardApplication in 1.252 seconds (process running for 1.407)
+2026-03-21T08:33:30.489-07:00  INFO 338 --- [io-18080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-21T08:33:30.489-07:00  INFO 338 --- [io-18080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-03-21T08:33:30.490-07:00  INFO 338 --- [io-18080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-03-21T08:33:30.682-07:00  INFO 338 --- [io-18080-exec-2] o.springdoc.api.AbstractOpenApiResource  : Init duration for springdoc-openapi is: 118 ms
+已导出 OpenAPI 到: /Users/mercury/Documents/ChronoAtlas-HistoryBoard-JavaH5-20260321/docs/07-OpenAPI-HistoryBoard-v1.runtime.json

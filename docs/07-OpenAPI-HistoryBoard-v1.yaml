@@ -1,0 +1,267 @@
+openapi: 3.0.3
+info:
+  title: HistoryBoard API
+  version: 1.0.0
+  description: |
+    历史看板 API（Java 版）。
+    支持中国历史检索、详情、同期世界对照、时间带与发现页。
+servers:
+  - url: http://127.0.0.1:8080
+    description: local
+paths:
+  /api/health:
+    get:
+      summary: 健康检查
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/history/search:
+    get:
+      summary: 历史检索
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          required: false
+          description: 关键词、人物、朝代、年份、别名
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 30
+            default: 12
+      responses:
+        '200':
+          description: 检索结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+
+  /api/history/suggest:
+    get:
+      summary: 建议词
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 30
+            default: 12
+      responses:
+        '200':
+          description: 建议词列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestResponse'
+
+  /api/history/events/{eventId}:
+    get:
+      summary: 事件详情
+      parameters:
+        - in: path
+          name: eventId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventView'
+        '404':
+          description: 事件不存在
+
+  /api/history/timeline:
+    get:
+      summary: 中国历史时间带
+      responses:
+        '200':
+          description: 时间带
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimelineResponse'
+
+  /api/history/discover:
+    get:
+      summary: 发现页
+      responses:
+        '200':
+          description: 默认推荐
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverResponse'
+
+components:
+  schemas:
+    SourceCitation:
+      type: object
+      properties:
+        source_type:
+          type: string
+          example: encyclopedia
+        source_name:
+          type: string
+          example: Wikipedia
+        title:
+          type: string
+        url:
+          type: string
+          format: uri
+        publisher:
+          type: string
+        accessed_at:
+          type: string
+          example: '2026-03-21'
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        note:
+          type: string
+
+    WorldContextView:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        region:
+          type: string
+        period:
+          type: string
+        start_year:
+          type: integer
+        end_year:
+          type: integer
+        summary:
+          type: string
+
+    EventView:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        dynasty:
+          type: string
+        category:
+          type: string
+        period:
+          type: string
+        start_year:
+          type: integer
+        end_year:
+          type: integer
+        location:
+          type: string
+        summary:
+          type: string
+        impact:
+          type: string
+        figures:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        aliases:
+          type: array
+          items:
+            type: string
+        keywords:
+          type: array
+          items:
+            type: string
+        audit_status:
+          type: string
+          example: UNVERIFIED
+        last_verified_at:
+          type: string
+          example: '2026-03-21'
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceCitation'
+        relevance:
+          type: number
+          format: double
+        world_context:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorldContextView'
+
+    SearchResponse:
+      type: object
+      properties:
+        query:
+          type: string
+        count:
+          type: integer
+        fallback_used:
+          type: boolean
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventView'
+        suggestions:
+          type: array
+          items:
+            type: string
+
+    SuggestResponse:
+      type: object
+      properties:
+        query:
+          type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+
+    TimelineResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventView'
+
+    DiscoverResponse:
+      type: object
+      properties:
+        quick_queries:
+          type: array
+          items:
+            type: string
+        default_results:
+          $ref: '#/components/schemas/SearchResponse'

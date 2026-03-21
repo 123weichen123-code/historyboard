@@ -1,0 +1,4 @@
+runner_pid=270
+port=18080
+selfcheck_status=ok
+health_response={"status":"ok"}

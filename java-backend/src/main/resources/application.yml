@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+historyboard:
+  data-dir: ../backend/app/data
+  frontend-dir: ../frontend
+
+spring:
+  jackson:
+    default-property-inclusion: non_null
+    property-naming-strategy: SNAKE_CASE
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
