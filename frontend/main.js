@@ -13,8 +13,16 @@ const state = {
   query: "",
   results: [],
   selectedId: "",
+  selectedTitle: "",
   quickQueries: [],
   timeline: [],
+  timelineDensity: 1,
+};
+
+const TIMELINE_DENSITY = {
+  0.75: 210,
+  1: 280,
+  1.4: 360,
 };
 
 async function getJson(url) {
@@ -23,6 +31,29 @@ async function getJson(url) {
     throw new Error(`请求失败: ${res.status}`);
   }
   return await res.json();
+}
+
+function normalizeYear(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  return null;
+}
+
+function getEventStartYear(event) {
+  return normalizeYear(event.start_year ?? event.startYear ?? event.year);
+}
+
+function getEventEndYear(event) {
+  return normalizeYear(event.end_year ?? event.endYear ?? event.year);
+}
+
+function getEventPeriodLabel(event) {
+  return event.period || "年份待补充";
+}
+
+function getTimelineEventLabel(event) {
+  return event.dynasty || event.category || "历史事件";
 }
 
 function renderSuggestionChips(items) {
@@ -70,7 +101,9 @@ function renderResultList(results, fallbackUsed) {
 
     card.addEventListener("click", () => {
       state.selectedId = event.id;
+      state.selectedTitle = event.title || "";
       renderResultList(state.results, fallbackUsed);
+      renderTimeStrip(state.timeline);
       loadDetail(event.id);
     });
 
@@ -79,6 +112,9 @@ function renderResultList(results, fallbackUsed) {
 }
 
 function renderDetail(detail) {
+  state.selectedTitle = detail.title || state.selectedTitle;
+  renderTimeStrip(state.timeline);
+
   const sourceList = (detail.sources || [])
     .slice(0, 5)
     .map((source) => {
@@ -128,26 +164,158 @@ function renderWorldTimeline(items) {
   });
 }
 
-function renderTimeStrip(events) {
-  timeStrip.innerHTML = "";
-  stripMeta.textContent = `${events.length} 个中国历史节点（第一版可持续扩展）`;
+function buildTimelineScale(events) {
+  const years = events
+    .flatMap((event) => [getEventStartYear(event), getEventEndYear(event)])
+    .filter((value) => typeof value === "number");
+
+  if (!years.length) {
+    return null;
+  }
+
+  const min = Math.min(...years);
+  const max = Math.max(...years);
+  const span = Math.max(max - min, 1);
+
+  return { min, max, span };
+}
+
+function getYearTickStep(span) {
+  if (span > 3000) return 500;
+  if (span > 1500) return 200;
+  if (span > 800) return 100;
+  if (span > 300) return 50;
+  if (span > 120) return 20;
+  return 10;
+}
+
+function createTimelineHeader(events) {
+  const header = document.createElement("div");
+  header.className = "timeline-toolbar";
+  header.innerHTML = `
+    <div>
+      <p class="timeline-kicker">可视化时间轴</p>
+      <p class="timeline-helper">沿一条连续时间轴查看关键节点；点击节点即可跳转对应事件。</p>
+    </div>
+    <div class="timeline-controls" role="group" aria-label="时间轴密度切换">
+      <button type="button" class="ghost timeline-density-btn" data-density="0.75">紧凑</button>
+      <button type="button" class="ghost timeline-density-btn active" data-density="1">标准</button>
+      <button type="button" class="ghost timeline-density-btn" data-density="1.4">展开</button>
+    </div>
+  `;
+
+  header.querySelectorAll(".timeline-density-btn").forEach((button) => {
+    const density = Number(button.dataset.density || 1);
+    if (density === state.timelineDensity) {
+      button.classList.add("active");
+    }
+    button.addEventListener("click", () => {
+      state.timelineDensity = density;
+      renderTimeStrip(events);
+    });
+  });
+
+  return header;
+}
+
+function renderTimelineFallback(events) {
+  const grid = document.createElement("div");
+  grid.className = "time-strip-grid";
 
   events.forEach((event) => {
     const item = document.createElement("button");
     item.type = "button";
     item.className = "strip-item";
     item.innerHTML = `
-      <span class="strip-year">${event.period}</span>
+      <span class="strip-year">${getEventPeriodLabel(event)}</span>
       <strong>${event.title}</strong>
       <span>${event.dynasty || ""}</span>
     `;
-
     item.addEventListener("click", () => {
       searchInput.value = event.title;
       runSearch(event.title);
     });
-    timeStrip.appendChild(item);
+    grid.appendChild(item);
   });
+
+  timeStrip.appendChild(grid);
+}
+
+function renderTimelineAxis(events, scale) {
+  const lane = document.createElement("div");
+  lane.className = "timeline-axis-scroll";
+
+  const rail = document.createElement("div");
+  rail.className = "timeline-axis";
+  rail.style.width = `${Math.max(events.length * TIMELINE_DENSITY[state.timelineDensity], 860)}px`;
+
+  const ticks = document.createElement("div");
+  ticks.className = "timeline-ticks";
+  const tickStep = getYearTickStep(scale.span);
+  const firstTick = Math.ceil(scale.min / tickStep) * tickStep;
+  for (let year = firstTick; year <= scale.max; year += tickStep) {
+    const tick = document.createElement("div");
+    tick.className = "timeline-tick";
+    tick.style.left = `${((year - scale.min) / scale.span) * 100}%`;
+    tick.innerHTML = `<span>${year < 0 ? `${Math.abs(year)} BCE` : `${year}`}</span>`;
+    ticks.appendChild(tick);
+  }
+  rail.appendChild(ticks);
+
+  events.forEach((event, index) => {
+    const startYear = getEventStartYear(event);
+    const fallbackPosition = events.length === 1 ? 50 : (index / (events.length - 1)) * 100;
+    const position = typeof startYear === "number" ? ((startYear - scale.min) / scale.span) * 100 : fallbackPosition;
+    const node = document.createElement("button");
+    const isActive = state.selectedTitle && state.selectedTitle === event.title;
+    node.type = "button";
+    node.className = `timeline-node ${index % 2 === 0 ? "upper" : "lower"} ${isActive ? "active" : ""}`;
+    node.style.left = `${Math.min(Math.max(position, 0), 100)}%`;
+    node.innerHTML = `
+      <span class="timeline-node-dot"></span>
+      <span class="timeline-node-card">
+        <span class="timeline-node-era">${getTimelineEventLabel(event)}</span>
+        <strong>${event.title}</strong>
+        <span class="timeline-node-period">${getEventPeriodLabel(event)}</span>
+      </span>
+    `;
+    node.addEventListener("click", () => {
+      searchInput.value = event.title;
+      runSearch(event.title);
+    });
+    rail.appendChild(node);
+  });
+
+  lane.appendChild(rail);
+  timeStrip.appendChild(lane);
+
+  const activeNode = rail.querySelector(".timeline-node.active");
+  if (activeNode) {
+    requestAnimationFrame(() => {
+      activeNode.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    });
+  }
+}
+
+function renderTimeStrip(events) {
+  timeStrip.innerHTML = "";
+
+  if (!events.length) {
+    stripMeta.textContent = "暂无时间轴数据";
+    timeStrip.innerHTML = '<p class="empty-text">暂无可展示的历史节点。</p>';
+    return;
+  }
+
+  stripMeta.textContent = `${events.length} 个中国历史节点，可按时间连续浏览`;
+  timeStrip.appendChild(createTimelineHeader(events));
+
+  const scale = buildTimelineScale(events);
+  if (!scale) {
+    renderTimelineFallback(events);
+    return;
+  }
+
+  renderTimelineAxis(events, scale);
 }
 
 async function loadDetail(eventId) {
@@ -171,9 +339,11 @@ async function runSearch(rawQuery) {
     state.results = payload.results || [];
     if (!state.selectedId && state.results.length) {
       state.selectedId = state.results[0].id;
+      state.selectedTitle = state.results[0].title || "";
     }
     if (state.results.length && !state.results.some((event) => event.id === state.selectedId)) {
       state.selectedId = state.results[0].id;
+      state.selectedTitle = state.results[0].title || "";
     }
 
     renderResultList(state.results, Boolean(payload.fallback_used));
@@ -181,6 +351,8 @@ async function runSearch(rawQuery) {
 
     const selected = state.results.find((event) => event.id === state.selectedId);
     if (selected) {
+      state.selectedTitle = selected.title || "";
+      renderTimeStrip(state.timeline);
       await loadDetail(selected.id);
     } else {
       detailCard.classList.add("empty");
@@ -201,6 +373,7 @@ async function loadDiscover() {
   const defaults = discover.default_results || {};
   state.results = defaults.results || [];
   state.selectedId = state.results[0]?.id || "";
+  state.selectedTitle = state.results[0]?.title || "";
   renderResultList(state.results, Boolean(defaults.fallback_used));
 
   if (state.selectedId) {
@@ -210,7 +383,20 @@ async function loadDiscover() {
 
 async function loadTimeline() {
   const payload = await getJson("/api/history/timeline");
-  state.timeline = payload.events || [];
+  state.timeline = (payload.events || []).slice().sort((a, b) => {
+    const yearA = getEventStartYear(a);
+    const yearB = getEventStartYear(b);
+    if (typeof yearA === "number" && typeof yearB === "number") {
+      return yearA - yearB;
+    }
+    if (typeof yearA === "number") {
+      return -1;
+    }
+    if (typeof yearB === "number") {
+      return 1;
+    }
+    return String(a.period || a.title).localeCompare(String(b.period || b.title), "zh-CN");
+  });
   renderTimeStrip(state.timeline);
 }
 
