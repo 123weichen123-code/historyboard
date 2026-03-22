@@ -16,10 +16,10 @@
     <div class="backdrop"></div>
     <main class="app-shell">
       <header class="hero">
-        <p class="eyebrow">历史看板 H5 · 第一版</p>
+        <p class="eyebrow">历史看板 H5 · 第二版时间轴</p>
         <h1>史镜 HistoryBoard</h1>
         <p class="subtitle">
-          输入任意关键词、人物、朝代或年份，快速定位中国历史事件，并同步比对同一时期的世界关键节点。
+          在一条连续时间线上查看中国与世界的重要节点，支持单独浏览、并行对照、按朝代或区域筛选。
         </p>
         <div class="search-row">
           <input
@@ -46,9 +46,9 @@
         <section class="panel detail-panel">
           <div class="panel-head">
             <h2>事件详情 + 同期世界</h2>
-            <span class="meta">点击左侧任一条查看深度信息</span>
+            <span class="meta">点击左侧检索结果或时间轴节点查看详情</span>
           </div>
-          <article id="detailCard" class="detail-card empty">请先在左侧选择一个历史事件。</article>
+          <article id="detailCard" class="detail-card empty">请先选择一个历史事件。</article>
           <div>
             <h3 class="timeline-title">同期世界关键节点</h3>
             <div id="worldTimeline" class="world-timeline"></div>
@@ -58,7 +58,7 @@
 
       <section class="panel strip-panel">
         <div class="panel-head">
-          <h2>历史时间轴</h2>
+          <h2>历史时间轴可视化</h2>
           <span id="stripMeta" class="meta"></span>
         </div>
         <div class="timeline-mode-bar">
@@ -69,8 +69,14 @@
           </div>
           <div class="timeline-filter-bar">
             <label class="timeline-filter">
-              <span>标签筛选</span>
-              <select id="timelineTagFilter">
+              <span id="filterPrimaryLabel">朝代</span>
+              <select id="timelinePrimaryFilter">
+                <option value="">全部</option>
+              </select>
+            </label>
+            <label class="timeline-filter secondary-filter" id="secondaryFilterWrap">
+              <span id="filterSecondaryLabel">类别</span>
+              <select id="timelineSecondaryFilter">
                 <option value="">全部</option>
               </select>
             </label>

@@ -22,9 +22,7 @@ body {
   margin: 0;
   color: var(--ink);
   font-family: "Sora", "PingFang SC", "Hiragino Sans GB", sans-serif;
-  background: radial-gradient(circle at 8% 12%, #fff6dc 0, transparent 38%),
-    radial-gradient(circle at 92% 18%, #e5f5ea 0, transparent 34%),
-    linear-gradient(150deg, var(--bg-main) 0%, var(--bg-sub) 100%);
+  background: radial-gradient(circle at 8% 12%, #fff6dc 0, transparent 38%), radial-gradient(circle at 92% 18%, #e5f5ea 0, transparent 34%), linear-gradient(150deg, var(--bg-main) 0%, var(--bg-sub) 100%);
   min-height: 100vh;
 }
 
@@ -40,15 +38,14 @@ h4 {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image: linear-gradient(rgba(32, 27, 14, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(32, 27, 14, 0.05) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(32, 27, 14, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(32, 27, 14, 0.05) 1px, transparent 1px);
   background-size: 36px 36px;
   mask-image: radial-gradient(circle at center, black 45%, transparent 88%);
 }
 
 .app-shell {
   position: relative;
-  max-width: 1200px;
+  max-width: 1240px;
   margin: 0 auto;
   padding: 24px 14px 60px;
 }
@@ -79,7 +76,7 @@ h1 {
 .subtitle {
   margin: 0;
   color: var(--muted);
-  max-width: 820px;
+  max-width: 860px;
   line-height: 1.65;
 }
 
@@ -316,10 +313,10 @@ button.ghost:hover {
 }
 
 .world-node {
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--node-accent, var(--accent)) 35%, white);
   border-radius: 12px;
   padding: 9px;
-  background: linear-gradient(160deg, rgba(31, 111, 109, 0.1), rgba(255, 255, 255, 0.9));
+  background: linear-gradient(160deg, color-mix(in srgb, var(--node-accent, var(--accent)) 14%, white), rgba(255, 255, 255, 0.92));
   animation: fade-up 0.45s ease;
 }
 
@@ -367,6 +364,10 @@ button.ghost:hover {
   font-weight: 700;
 }
 
+.timeline-filter.hidden {
+  display: none;
+}
+
 .timeline-filter select {
   min-width: 160px;
 }
@@ -374,7 +375,7 @@ button.ghost:hover {
 .time-strip {
   margin-top: 12px;
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .timeline-toolbar {
@@ -415,44 +416,75 @@ button.ghost:hover {
 .timeline-axis-scroll {
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 8px;
+  padding-bottom: 10px;
 }
 
 .timeline-axis {
   position: relative;
-  min-height: 340px;
-  padding: 42px 26px;
+  min-height: 410px;
+  padding: 34px 30px 26px;
 }
 
-.timeline-axis::before {
+.timeline-axis.single::before,
+.timeline-axis.dual::before,
+.timeline-axis.dual::after {
   content: "";
   position: absolute;
-  left: 26px;
-  right: 26px;
-  top: 50%;
-  height: 4px;
+  left: 30px;
+  right: 30px;
+  height: 5px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(31, 111, 109, 0.22), rgba(155, 44, 44, 0.65), rgba(31, 111, 109, 0.22));
-  transform: translateY(-50%);
+}
+
+.timeline-axis.single::before {
+  top: 50%;
+  background: linear-gradient(90deg, rgba(31, 111, 109, 0.15), rgba(155, 44, 44, 0.72), rgba(31, 111, 109, 0.15));
+}
+
+.timeline-axis.dual::before {
+  top: 24%;
+  background: linear-gradient(90deg, rgba(155, 44, 44, 0.16), rgba(155, 44, 44, 0.8), rgba(155, 44, 44, 0.16));
+}
+
+.timeline-axis.dual::after {
+  top: 72%;
+  background: linear-gradient(90deg, rgba(31, 111, 109, 0.16), rgba(31, 111, 109, 0.8), rgba(31, 111, 109, 0.16));
+}
+
+.timeline-lane {
+  position: absolute;
+  left: 16px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.timeline-lane.china {
+  top: 18%;
+}
+
+.timeline-lane.world {
+  top: 66%;
 }
 
 .timeline-ticks {
   position: absolute;
-  inset: 0 26px;
+  inset: 0 30px;
   pointer-events: none;
 }
 
 .timeline-tick {
   position: absolute;
-  top: calc(50% - 28px);
+  top: 8%;
+  bottom: 8%;
   width: 1px;
-  height: 56px;
-  background: rgba(90, 100, 107, 0.2);
+  background: rgba(90, 100, 107, 0.14);
 }
 
 .timeline-tick span {
   position: absolute;
-  top: -24px;
+  top: -18px;
   left: 50%;
   transform: translateX(-50%);
   font-size: 0.72rem;
@@ -462,121 +494,92 @@ button.ghost:hover {
 
 .timeline-node {
   position: absolute;
-  top: 50%;
   display: block;
-  width: 208px;
+  width: 214px;
   padding: 0;
   border: none;
   background: transparent;
   color: var(--ink);
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
 }
 
 .timeline-node:hover {
   background: transparent;
   box-shadow: none;
-  transform: translateX(-50%);
-}
-
-.timeline-node.upper {
-  padding-bottom: 30px;
-}
-
-.timeline-node.lower {
-  padding-top: 30px;
-}
-
-.timeline-node.upper .timeline-node-dot {
-  bottom: 8px;
-}
-
-.timeline-node.lower .timeline-node-dot {
-  top: 8px;
-}
-
-.timeline-node.upper .timeline-node-card {
-  margin-bottom: 34px;
-}
-
-.timeline-node.lower .timeline-node-card {
-  margin-top: 34px;
-}
-
-.timeline-node::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  width: 2px;
-  background: linear-gradient(180deg, rgba(31, 111, 109, 0.4), rgba(155, 44, 44, 0.32));
-  transform: translateX(-50%);
-}
-
-.timeline-node.upper::after {
-  bottom: 14px;
-  height: 24px;
-}
-
-.timeline-node.lower::after {
-  top: 14px;
-  height: 24px;
+  transform: translate(-50%, -52%);
 }
 
 .timeline-node-dot {
   position: absolute;
   left: 50%;
-  width: 14px;
-  height: 14px;
-  transform: translateX(-50%);
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
   border-radius: 999px;
-  border: 3px solid #fff7eb;
-  background: var(--brand);
-  box-shadow: 0 0 0 6px rgba(155, 44, 44, 0.14);
+  background: var(--node-accent, var(--brand));
+  border: 3px solid #fff9f0;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--node-accent, var(--brand)) 22%, white);
 }
 
 .timeline-node-card {
+  position: absolute;
+  left: 50%;
+  width: 214px;
   display: grid;
   gap: 4px;
   text-align: left;
-  border: 1px solid rgba(200, 197, 184, 0.95);
+  border: 1px solid color-mix(in srgb, var(--node-accent, var(--brand)) 38%, white);
   border-radius: 14px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 242, 229, 0.96));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--node-accent, var(--brand)) 10%, white), rgba(255, 255, 255, 0.98));
   padding: 12px;
   box-shadow: 0 10px 22px rgba(47, 42, 29, 0.1);
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.timeline-node.china .timeline-node-card {
+  top: -120px;
+  transform: translateX(-50%);
+}
+
+.timeline-axis.single .timeline-node.lower .timeline-node-card {
+  top: 22px;
+}
+
+.timeline-axis.single .timeline-node.lower .timeline-node-dot {
+  top: 0;
+}
+
+.timeline-axis.single .timeline-node.lower {
+  transform: translate(-50%, 0);
+}
+
+.timeline-axis.single .timeline-node.lower:hover {
+  transform: translate(-50%, -2px);
+}
+
+.timeline-node.world .timeline-node-card,
+.timeline-axis.dual .timeline-node.world .timeline-node-card {
+  top: 22px;
+  transform: translateX(-50%);
+}
+
+.timeline-axis.dual .timeline-node.china .timeline-node-card {
+  top: -120px;
 }
 
 .timeline-node:hover .timeline-node-card {
-  transform: translateY(-2px);
-  border-color: rgba(155, 44, 44, 0.6);
-  box-shadow: 0 14px 28px rgba(47, 42, 29, 0.14);
+  border-color: var(--node-accent, var(--brand));
+  box-shadow: 0 16px 28px rgba(47, 42, 29, 0.16);
 }
 
 .timeline-node.active .timeline-node-card {
-  border-color: var(--brand);
-  background: linear-gradient(180deg, rgba(255, 248, 242, 1), rgba(255, 239, 229, 0.98));
+  border-width: 2px;
+  box-shadow: 0 18px 32px rgba(30, 30, 30, 0.18);
 }
 
 .timeline-node.active .timeline-node-dot {
-  background: var(--accent);
-  box-shadow: 0 0 0 7px rgba(31, 111, 109, 0.16);
-}
-
-.timeline-node.world .timeline-node-card {
-  background: linear-gradient(180deg, rgba(243, 251, 250, 0.98), rgba(228, 244, 242, 0.98));
-}
-
-.timeline-node.world .timeline-node-dot {
-  background: var(--accent);
-  box-shadow: 0 0 0 6px rgba(31, 111, 109, 0.14);
-}
-
-.timeline-node.world.active .timeline-node-card {
-  border-color: var(--accent-strong);
-}
-
-.timeline-node.world.active .timeline-node-dot {
-  background: var(--brand);
-  box-shadow: 0 0 0 7px rgba(155, 44, 44, 0.18);
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--node-accent, var(--brand)) 32%, white);
 }
 
 .timeline-node-scope,
@@ -592,8 +595,34 @@ button.ghost:hover {
 }
 
 .timeline-node-card strong {
-  font-size: 0.94rem;
-  line-height: 1.4;
+  font-size: 0.95rem;
+  line-height: 1.42;
+}
+
+.timeline-legend {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f7f3e7;
+  border: 1px solid color-mix(in srgb, var(--chip-color, var(--brand)) 35%, white);
+  font-size: 0.78rem;
+  color: var(--ink);
+}
+
+.legend-chip::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--chip-color, var(--brand));
 }
 
 .time-strip-grid {
@@ -604,9 +633,9 @@ button.ghost:hover {
 
 .strip-item {
   text-align: left;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--node-accent, var(--brand)) 35%, white);
   border-radius: 12px;
-  background: #fff;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--node-accent, var(--brand)) 8%, white), rgba(255, 255, 255, 0.98));
   color: var(--ink);
   padding: 9px;
   display: grid;
@@ -614,13 +643,9 @@ button.ghost:hover {
   min-height: 92px;
 }
 
-.strip-item.world {
-  background: linear-gradient(155deg, rgba(31, 111, 109, 0.08), rgba(255, 255, 255, 0.94));
-}
-
 .strip-item:hover {
   box-shadow: none;
-  background: linear-gradient(155deg, rgba(31, 111, 109, 0.08), rgba(255, 255, 255, 0.94));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--node-accent, var(--brand)) 12%, white), rgba(255, 255, 255, 0.98));
 }
 
 .strip-item strong {
@@ -658,11 +683,12 @@ button.ghost:hover {
   }
 
   .timeline-axis {
-    min-height: 300px;
+    min-height: 390px;
   }
 
-  .timeline-node {
-    width: 180px;
+  .timeline-node,
+  .timeline-node-card {
+    width: 184px;
   }
 }
 
@@ -686,17 +712,20 @@ button.ghost:hover {
   }
 
   .timeline-axis {
-    min-height: 280px;
-    padding: 34px 20px;
+    min-height: 360px;
+    padding: 30px 20px 24px;
   }
 
-  .timeline-axis::before,
+  .timeline-axis.single::before,
+  .timeline-axis.dual::before,
+  .timeline-axis.dual::after,
   .timeline-ticks {
     left: 20px;
     right: 20px;
   }
 
-  .timeline-node {
+  .timeline-node,
+  .timeline-node-card {
     width: 158px;
   }
 

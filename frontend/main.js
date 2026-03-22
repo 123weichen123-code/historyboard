@@ -9,7 +9,11 @@ const worldTimeline = document.getElementById("worldTimeline");
 const timeStrip = document.getElementById("timeStrip");
 const stripMeta = document.getElementById("stripMeta");
 const scopeTabs = document.querySelectorAll(".scope-tab");
-const timelineTagFilter = document.getElementById("timelineTagFilter");
+const primaryFilter = document.getElementById("timelinePrimaryFilter");
+const secondaryFilter = document.getElementById("timelineSecondaryFilter");
+const primaryLabel = document.getElementById("filterPrimaryLabel");
+const secondaryLabel = document.getElementById("filterSecondaryLabel");
+const secondaryWrap = document.getElementById("secondaryFilterWrap");
 const timelineYearFilter = document.getElementById("timelineYearFilter");
 
 const state = {
@@ -22,14 +26,15 @@ const state = {
   timeline: [],
   timelineScope: "china",
   timelineDensity: 1,
-  timelineTagFilter: "",
+  primaryFilter: "",
+  secondaryFilter: "",
   timelineYearFilter: "all",
 };
 
 const TIMELINE_DENSITY = {
-  0.75: 210,
-  1: 280,
-  1.4: 360,
+  0.75: 260,
+  1: 340,
+  1.4: 420,
 };
 
 const YEAR_RANGES = {
@@ -38,6 +43,42 @@ const YEAR_RANGES = {
   medieval: { min: 221, max: 1368 },
   early_modern: { min: 1369, max: 1911 },
   modern: { min: 1912, max: 9999 },
+};
+
+const CHINA_DYNASTY_COLORS = {
+  夏: "#8a5a44",
+  商: "#87553d",
+  西周: "#6c716c",
+  春秋: "#4e6b67",
+  战国: "#495d73",
+  秦: "#8d3f2f",
+  西汉: "#b35c33",
+  东汉: "#b86f2d",
+  三国: "#5e5a7d",
+  西晋: "#57657c",
+  东晋: "#5d6f86",
+  南北朝: "#687d8c",
+  隋: "#6f7a54",
+  唐: "#b88a2d",
+  五代十国: "#8a6b52",
+  北宋: "#3f7f72",
+  南宋: "#2d8f7e",
+  辽: "#556b7a",
+  金: "#8a4c2b",
+  元: "#345b7a",
+  明: "#b43d3d",
+  清: "#294d73",
+  近代: "#5e4635",
+  现代: "#d96b2b",
+};
+
+const WORLD_REGION_COLORS = {
+  欧洲: "#1f6f6d",
+  欧亚: "#3f67a5",
+  西亚: "#a65d2f",
+  非洲: "#8a6d2d",
+  美洲: "#2f7a56",
+  全球: "#5b5b8a",
 };
 
 async function getJson(url) {
@@ -49,10 +90,7 @@ async function getJson(url) {
 }
 
 function normalizeYear(value) {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-  return null;
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function getEventStartYear(event) {
@@ -71,11 +109,23 @@ function getEventScope(event) {
   return event.timeline_scope || event.timelineScope || "china";
 }
 
-function getEventMetaLabel(event) {
+function getEventDynasty(event) {
+  return event.dynasty || "未标注朝代";
+}
+
+function getEventCategory(event) {
+  return event.category || "未标注类别";
+}
+
+function getEventRegion(event) {
+  return event.region || "未标注区域";
+}
+
+function getEventColor(event) {
   if (getEventScope(event) === "world") {
-    return event.region || event.category || "世界历史";
+    return WORLD_REGION_COLORS[getEventRegion(event)] || "#1f6f6d";
   }
-  return event.dynasty || event.category || "中国历史";
+  return CHINA_DYNASTY_COLORS[getEventDynasty(event)] || "#7c1f1f";
 }
 
 function setScopeTabState() {
@@ -86,8 +136,7 @@ function setScopeTabState() {
 
 function renderSuggestionChips(items) {
   suggestionsEl.innerHTML = "";
-  const chips = items.slice(0, 12);
-  chips.forEach((item) => {
+  items.slice(0, 12).forEach((item) => {
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "chip";
@@ -126,7 +175,6 @@ function renderResultList(results, fallbackUsed) {
       <p class="summary">${event.summary}</p>
       <div class="tag-row">${(event.tags || []).slice(0, 3).map((tag) => `<span class="tiny-tag">${tag}</span>`).join("")}</div>
     `;
-
     card.addEventListener("click", () => {
       state.selectedId = event.id;
       state.selectedTitle = event.title || "";
@@ -135,7 +183,6 @@ function renderResultList(results, fallbackUsed) {
       renderTimeStrip();
       loadDetail(event.id, "china");
     });
-
     resultList.appendChild(card);
   });
 }
@@ -147,10 +194,9 @@ function buildSourceList(detail) {
       const name = source.source_name || source.sourceName || "来源";
       const title = source.title || "";
       const url = source.url || "";
-      if (url) {
-        return `<li><a href="${url}" target="_blank" rel="noopener">${name}: ${title || url}</a></li>`;
-      }
-      return `<li>${name}: ${title || "待补充"}</li>`;
+      return url
+        ? `<li><a href="${url}" target="_blank" rel="noopener">${name}: ${title || url}</a></li>`
+        : `<li>${name}: ${title || "待补充"}</li>`;
     })
     .join("");
 }
@@ -199,6 +245,7 @@ function renderWorldTimeline(items) {
   items.forEach((node) => {
     const card = document.createElement("article");
     card.className = "world-node";
+    card.style.setProperty("--node-accent", WORLD_REGION_COLORS[node.region] || "#1f6f6d");
     card.innerHTML = `
       <p class="label">${node.region}</p>
       <h4>${node.title}</h4>
@@ -210,18 +257,13 @@ function renderWorldTimeline(items) {
 }
 
 function buildTimelineScale(events) {
-  const years = events
-    .flatMap((event) => [getEventStartYear(event), getEventEndYear(event)])
-    .filter((value) => typeof value === "number");
-
+  const years = events.flatMap((event) => [getEventStartYear(event), getEventEndYear(event)]).filter((value) => typeof value === "number");
   if (!years.length) {
     return null;
   }
-
   const min = Math.min(...years);
   const max = Math.max(...years);
-  const span = Math.max(max - min, 1);
-  return { min, max, span };
+  return { min, max, span: Math.max(max - min, 1) };
 }
 
 function getYearTickStep(span) {
@@ -233,68 +275,111 @@ function getYearTickStep(span) {
   return 10;
 }
 
-function getFilteredTimelineEvents() {
-  const range = YEAR_RANGES[state.timelineYearFilter];
-
-  return state.timeline.filter((event) => {
-    const scope = getEventScope(event);
-    if (state.timelineScope !== "all" && scope !== state.timelineScope) {
-      return false;
-    }
-
-    const tag = getEventMetaLabel(event);
-    if (state.timelineTagFilter && tag !== state.timelineTagFilter) {
-      return false;
-    }
-
-    if (range) {
-      const start = getEventStartYear(event);
-      const end = getEventEndYear(event);
-      if (typeof start !== "number" || typeof end !== "number") {
-        return false;
-      }
-      if (end < range.min || start > range.max) {
-        return false;
-      }
-    }
-
-    return true;
-  });
+function getFilterConfig(scope) {
+  if (scope === "world") {
+    return {
+      primaryLabel: "区域",
+      primaryValues: (event) => getEventRegion(event),
+      secondaryLabel: "隐藏",
+      secondaryValues: null,
+    };
+  }
+  if (scope === "all") {
+    return {
+      primaryLabel: "来源",
+      primaryValues: (event) => (getEventScope(event) === "world" ? "世界" : "中国"),
+      secondaryLabel: "朝代 / 区域",
+      secondaryValues: (event) => (getEventScope(event) === "world" ? getEventRegion(event) : getEventDynasty(event)),
+    };
+  }
+  return {
+    primaryLabel: "朝代",
+    primaryValues: (event) => getEventDynasty(event),
+    secondaryLabel: "类别",
+    secondaryValues: (event) => getEventCategory(event),
+  };
 }
 
-function rebuildTimelineTagFilter() {
-  const previous = state.timelineTagFilter;
-  const values = state.timeline
-    .filter((event) => state.timelineScope === "all" || getEventScope(event) === state.timelineScope)
-    .map((event) => getEventMetaLabel(event))
-    .filter(Boolean);
+function rebuildFilters() {
+  const config = getFilterConfig(state.timelineScope);
+  primaryLabel.textContent = config.primaryLabel;
+  secondaryLabel.textContent = config.secondaryLabel;
+  secondaryWrap.classList.toggle("hidden", !config.secondaryValues);
 
-  const unique = Array.from(new Set(values)).sort((a, b) => a.localeCompare(b, "zh-CN"));
-  timelineTagFilter.innerHTML = '<option value="">全部</option>';
+  const scopedEvents = state.timeline.filter((event) => state.timelineScope === "all" || getEventScope(event) === state.timelineScope);
+  const primaryValues = Array.from(new Set(scopedEvents.map(config.primaryValues).filter(Boolean))).sort((a, b) => a.localeCompare(b, "zh-CN"));
+  const secondaryValues = config.secondaryValues
+    ? Array.from(new Set(scopedEvents.map(config.secondaryValues).filter(Boolean))).sort((a, b) => a.localeCompare(b, "zh-CN"))
+    : [];
 
-  unique.forEach((value) => {
+  primaryFilter.innerHTML = '<option value="">全部</option>';
+  primaryValues.forEach((value) => {
     const option = document.createElement("option");
     option.value = value;
     option.textContent = value;
-    timelineTagFilter.appendChild(option);
+    primaryFilter.appendChild(option);
   });
 
-  if (previous && unique.includes(previous)) {
-    timelineTagFilter.value = previous;
-  } else {
-    state.timelineTagFilter = "";
-    timelineTagFilter.value = "";
+  secondaryFilter.innerHTML = '<option value="">全部</option>';
+  secondaryValues.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    secondaryFilter.appendChild(option);
+  });
+
+  if (!primaryValues.includes(state.primaryFilter)) {
+    state.primaryFilter = "";
   }
+  if (!secondaryValues.includes(state.secondaryFilter)) {
+    state.secondaryFilter = "";
+  }
+  primaryFilter.value = state.primaryFilter;
+  secondaryFilter.value = state.secondaryFilter;
+}
+
+function matchFilters(event) {
+  const range = YEAR_RANGES[state.timelineYearFilter];
+  const config = getFilterConfig(state.timelineScope);
+  const scope = getEventScope(event);
+
+  if (state.timelineScope !== "all" && scope !== state.timelineScope) {
+    return false;
+  }
+  if (state.primaryFilter && config.primaryValues(event) !== state.primaryFilter) {
+    return false;
+  }
+  if (config.secondaryValues && state.secondaryFilter && config.secondaryValues(event) !== state.secondaryFilter) {
+    return false;
+  }
+  if (range) {
+    const start = getEventStartYear(event);
+    const end = getEventEndYear(event);
+    if (typeof start !== "number" || typeof end !== "number") {
+      return false;
+    }
+    if (end < range.min || start > range.max) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function getFilteredTimelineEvents() {
+  return state.timeline.filter(matchFilters);
 }
 
 function createTimelineHeader(events) {
   const header = document.createElement("div");
-  const scopeLabel = state.timelineScope === "china" ? "中国单轴" : state.timelineScope === "world" ? "世界单轴" : "中外并行";
+  const scopeLabel = state.timelineScope === "china" ? "中国主线" : state.timelineScope === "world" ? "世界主线" : "中国 / 世界双轨并行";
+  const helper = state.timelineScope === "all"
+    ? "上轨展示中国历史，下轨展示世界历史；用不同色带区分朝代与区域。"
+    : "沿一条连续时间线查看重点事件，颜色直接映射到朝代或区域。";
   header.className = "timeline-toolbar";
   header.innerHTML = `
     <div>
       <p class="timeline-kicker">${scopeLabel}</p>
-      <p class="timeline-helper">支持单独查看中国时间轴、世界时间轴，或把两者放到同一条轴线上并行对照。</p>
+      <p class="timeline-helper">${helper}</p>
     </div>
     <div class="timeline-controls" role="group" aria-label="时间轴密度切换">
       <button type="button" class="ghost timeline-density-btn" data-density="0.75">紧凑</button>
@@ -315,34 +400,11 @@ function createTimelineHeader(events) {
   return header;
 }
 
-function renderTimelineFallback(events) {
-  const grid = document.createElement("div");
-  grid.className = "time-strip-grid";
-
-  events.forEach((event) => {
-    const item = document.createElement("button");
-    item.type = "button";
-    item.className = `strip-item ${getEventScope(event)}`;
-    item.innerHTML = `
-      <span class="strip-year">${getEventPeriodLabel(event)}</span>
-      <strong>${event.title}</strong>
-      <span>${getEventMetaLabel(event)}</span>
-    `;
-    item.addEventListener("click", () => {
-      handleTimelineEventClick(event);
-    });
-    grid.appendChild(item);
-  });
-
-  timeStrip.appendChild(grid);
-}
-
 function handleTimelineEventClick(event) {
   state.selectedId = event.id;
   state.selectedTitle = event.title || "";
   state.selectedSource = getEventScope(event);
   renderTimeStrip();
-
   if (state.selectedSource === "world") {
     loadDetail(event.id, "world");
   } else {
@@ -351,13 +413,71 @@ function handleTimelineEventClick(event) {
   }
 }
 
+function renderTimelineFallback(events) {
+  const grid = document.createElement("div");
+  grid.className = "time-strip-grid";
+  events.forEach((event) => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = `strip-item ${getEventScope(event)}`;
+    item.style.setProperty("--node-accent", getEventColor(event));
+    item.innerHTML = `
+      <span class="strip-year">${getEventPeriodLabel(event)}</span>
+      <strong>${event.title}</strong>
+      <span>${getEventScope(event) === "world" ? getEventRegion(event) : `${getEventDynasty(event)} · ${getEventCategory(event)}`}</span>
+    `;
+    item.addEventListener("click", () => handleTimelineEventClick(event));
+    grid.appendChild(item);
+  });
+  timeStrip.appendChild(grid);
+}
+
+function getNodeTop(event, index) {
+  if (state.timelineScope === "all") {
+    return getEventScope(event) === "world" ? 66 : 18;
+  }
+  return index % 2 === 0 ? 16 : 52;
+}
+
+function createLegend(events) {
+  const legend = document.createElement("div");
+  legend.className = "timeline-legend";
+  const seen = new Set();
+
+  events.forEach((event) => {
+    const key = getEventScope(event) === "world" ? getEventRegion(event) : getEventDynasty(event);
+    if (!key || seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    const chip = document.createElement("span");
+    chip.className = "legend-chip";
+    chip.style.setProperty("--chip-color", getEventColor(event));
+    chip.textContent = key;
+    legend.appendChild(chip);
+  });
+  return legend;
+}
+
 function renderTimelineAxis(events, scale) {
-  const lane = document.createElement("div");
-  lane.className = "timeline-axis-scroll";
+  const scroll = document.createElement("div");
+  scroll.className = "timeline-axis-scroll";
 
   const rail = document.createElement("div");
-  rail.className = "timeline-axis";
-  rail.style.width = `${Math.max(events.length * TIMELINE_DENSITY[state.timelineDensity], 860)}px`;
+  rail.className = `timeline-axis ${state.timelineScope === "all" ? "dual" : "single"}`;
+  rail.style.width = `${Math.max(events.length * TIMELINE_DENSITY[state.timelineDensity], 1100)}px`;
+
+  if (state.timelineScope === "all") {
+    const chinaLane = document.createElement("div");
+    chinaLane.className = "timeline-lane china";
+    chinaLane.innerHTML = '<span>中国</span>';
+    rail.appendChild(chinaLane);
+
+    const worldLane = document.createElement("div");
+    worldLane.className = "timeline-lane world";
+    worldLane.innerHTML = '<span>世界</span>';
+    rail.appendChild(worldLane);
+  }
 
   const ticks = document.createElement("div");
   ticks.className = "timeline-ticks";
@@ -376,16 +496,18 @@ function renderTimelineAxis(events, scale) {
     const startYear = getEventStartYear(event);
     const fallbackPosition = events.length === 1 ? 50 : (index / (events.length - 1)) * 100;
     const position = typeof startYear === "number" ? ((startYear - scale.min) / scale.span) * 100 : fallbackPosition;
-    const isActive = state.selectedSource === getEventScope(event) && state.selectedTitle === event.title;
     const node = document.createElement("button");
+    const isActive = state.selectedSource === getEventScope(event) && state.selectedTitle === event.title;
     node.type = "button";
-    node.className = `timeline-node ${index % 2 === 0 ? "upper" : "lower"} ${getEventScope(event)} ${isActive ? "active" : ""}`;
+    node.className = `timeline-node ${getEventScope(event)} ${isActive ? "active" : ""}`;
     node.style.left = `${Math.min(Math.max(position, 0), 100)}%`;
+    node.style.top = `${getNodeTop(event, index)}%`;
+    node.style.setProperty("--node-accent", getEventColor(event));
     node.innerHTML = `
       <span class="timeline-node-dot"></span>
       <span class="timeline-node-card">
         <span class="timeline-node-scope">${getEventScope(event) === "world" ? "WORLD" : "CHINA"}</span>
-        <span class="timeline-node-era">${getEventMetaLabel(event)}</span>
+        <span class="timeline-node-era">${getEventScope(event) === "world" ? getEventRegion(event) : getEventDynasty(event)}</span>
         <strong>${event.title}</strong>
         <span class="timeline-node-period">${getEventPeriodLabel(event)}</span>
       </span>
@@ -394,8 +516,9 @@ function renderTimelineAxis(events, scale) {
     rail.appendChild(node);
   });
 
-  lane.appendChild(rail);
-  timeStrip.appendChild(lane);
+  scroll.appendChild(rail);
+  timeStrip.appendChild(scroll);
+  timeStrip.appendChild(createLegend(events));
 
   const activeNode = rail.querySelector(".timeline-node.active");
   if (activeNode) {
@@ -407,26 +530,27 @@ function renderTimelineAxis(events, scale) {
 
 function renderTimeStrip() {
   timeStrip.innerHTML = "";
-  rebuildTimelineTagFilter();
-
+  rebuildFilters();
   const events = getFilteredTimelineEvents();
+
   if (!events.length) {
     stripMeta.textContent = "当前筛选条件下暂无时间轴数据";
-    timeStrip.innerHTML = '<p class="empty-text">换个范围、标签或年份试试。</p>';
+    timeStrip.innerHTML = '<p class="empty-text">换个朝代、区域、类别或年份试试。</p>';
     return;
   }
 
   const chinaCount = events.filter((event) => getEventScope(event) === "china").length;
-  const worldCount = events.length - chinaCount;
-  stripMeta.textContent = `当前展示 ${events.length} 个节点${state.timelineScope === "all" ? `（中国 ${chinaCount} / 世界 ${worldCount}）` : ""}`;
-  timeStrip.appendChild(createTimelineHeader(events));
+  const worldCount = events.filter((event) => getEventScope(event) === "world").length;
+  stripMeta.textContent = state.timelineScope === "all"
+    ? `当前展示 ${events.length} 个节点（中国 ${chinaCount} / 世界 ${worldCount}）`
+    : `当前展示 ${events.length} 个重点节点`;
 
+  timeStrip.appendChild(createTimelineHeader(events));
   const scale = buildTimelineScale(events);
   if (!scale) {
     renderTimelineFallback(events);
     return;
   }
-
   renderTimelineAxis(events, scale);
 }
 
@@ -436,13 +560,11 @@ async function loadDetail(eventId, source = "china") {
     state.selectedSource = source;
     state.selectedTitle = detail.title || state.selectedTitle;
     renderTimeStrip();
-
     if (source === "world") {
       renderWorldDetail(detail);
       renderWorldTimeline([]);
       return;
     }
-
     renderChinaDetail(detail);
     renderWorldTimeline(detail.world_context || []);
   } catch (error) {
@@ -455,33 +577,29 @@ async function loadDetail(eventId, source = "china") {
 async function runSearch(rawQuery) {
   const query = (rawQuery ?? searchInput.value).trim();
   state.query = query;
-
   try {
     const payload = await getJson(`/api/history/search?q=${encodeURIComponent(query)}&limit=12`);
     state.results = payload.results || [];
     if (!state.selectedId && state.results.length) {
       state.selectedId = state.results[0].id;
-      state.selectedTitle = state.results[0].title || "";
-      state.selectedSource = "china";
     }
     if (state.results.length && !state.results.some((event) => event.id === state.selectedId)) {
       state.selectedId = state.results[0].id;
-      state.selectedTitle = state.results[0].title || "";
-      state.selectedSource = "china";
     }
-
-    renderResultList(state.results, Boolean(payload.fallback_used));
-    renderSuggestionChips(payload.suggestions || state.quickQueries);
-
-    const selected = state.results.find((event) => event.id === state.selectedId);
+    const selected = state.results.find((event) => event.id === state.selectedId) || state.results[0];
     if (selected) {
       state.selectedTitle = selected.title || "";
       state.selectedSource = "china";
-      renderTimeStrip();
+      state.selectedId = selected.id;
+    }
+    renderResultList(state.results, Boolean(payload.fallback_used));
+    renderSuggestionChips(payload.suggestions || state.quickQueries);
+    renderTimeStrip();
+    if (selected) {
       await loadDetail(selected.id, "china");
     } else {
       detailCard.classList.add("empty");
-      detailCard.innerHTML = "请先在左侧选择一个历史事件。";
+      detailCard.innerHTML = "请先选择一个历史事件。";
       renderWorldTimeline([]);
     }
   } catch (error) {
@@ -494,14 +612,12 @@ async function loadDiscover() {
   const discover = await getJson("/api/history/discover");
   state.quickQueries = discover.quick_queries || [];
   renderSuggestionChips(state.quickQueries);
-
   const defaults = discover.default_results || {};
   state.results = defaults.results || [];
   state.selectedId = state.results[0]?.id || "";
   state.selectedTitle = state.results[0]?.title || "";
   state.selectedSource = "china";
   renderResultList(state.results, Boolean(defaults.fallback_used));
-
   if (state.selectedId) {
     await loadDetail(state.selectedId, "china");
   }
@@ -528,8 +644,7 @@ async function loadTimeline() {
 
 function pickRandomQuery() {
   const pool = state.quickQueries.length ? state.quickQueries : ["秦始皇", "鸦片战争", "辛亥革命", "改革开放"];
-  const index = Math.floor(Math.random() * pool.length);
-  const query = pool[index];
+  const query = pool[Math.floor(Math.random() * pool.length)];
   searchInput.value = query;
   runSearch(query);
 }
@@ -537,14 +652,20 @@ function pickRandomQuery() {
 scopeTabs.forEach((button) => {
   button.addEventListener("click", () => {
     state.timelineScope = button.dataset.scope || "china";
-    state.timelineTagFilter = "";
+    state.primaryFilter = "";
+    state.secondaryFilter = "";
     setScopeTabState();
     renderTimeStrip();
   });
 });
 
-timelineTagFilter.addEventListener("change", (event) => {
-  state.timelineTagFilter = event.target.value;
+primaryFilter.addEventListener("change", (event) => {
+  state.primaryFilter = event.target.value;
+  renderTimeStrip();
+});
+
+secondaryFilter.addEventListener("change", (event) => {
+  state.secondaryFilter = event.target.value;
   renderTimeStrip();
 });
 
