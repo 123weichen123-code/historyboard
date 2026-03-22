@@ -42,6 +42,7 @@ public class HistorySearchService {
     private final List<WorldHistoryEvent> worldEvents = new ArrayList<>();
     private final List<IndexedEvent> indexedEvents = new ArrayList<>();
     private final Map<String, ChinaHistoryEvent> eventsById = new HashMap<>();
+    private final Map<String, WorldHistoryEvent> worldEventsById = new HashMap<>();
     private final List<String> suggestions = new ArrayList<>();
 
     public HistorySearchService(ObjectMapper objectMapper) {
@@ -122,7 +123,15 @@ public class HistorySearchService {
         return matched;
     }
 
-    public EventView eventDetail(String eventId) {
+    public EventView eventDetail(String eventId, String source) {
+        if ("world".equalsIgnoreCase(source)) {
+            WorldHistoryEvent event = worldEventsById.get(eventId);
+            if (event == null) {
+                return null;
+            }
+            return toWorldEventView(event);
+        }
+
         ChinaHistoryEvent event = eventsById.get(eventId);
         if (event == null) {
             return null;
@@ -133,20 +142,23 @@ public class HistorySearchService {
         return view;
     }
 
-    public TimelineResponse timeline() {
+    public TimelineResponse timeline(String scope) {
+        String normalizedScope = normalizeScope(scope);
         TimelineResponse response = new TimelineResponse();
         List<EventView> events = new ArrayList<>();
-        for (ChinaHistoryEvent event : chinaEvents) {
-            EventView view = new EventView();
-            view.setId(event.getId());
-            view.setTitle(event.getTitle());
-            view.setDynasty(defaultString(event.getDynasty()));
-            view.setCategory(defaultString(event.getCategory()));
-            view.setStartYear(event.getStartYear());
-            view.setEndYear(event.getEndYear());
-            view.setPeriod(periodLabel(event.getStartYear(), event.getEndYear()));
-            events.add(view);
+
+        if (!"world".equals(normalizedScope)) {
+            for (ChinaHistoryEvent event : chinaEvents) {
+                events.add(toTimelineEventView(event));
+            }
         }
+        if (!"china".equals(normalizedScope)) {
+            for (WorldHistoryEvent event : worldEvents) {
+                events.add(toTimelineEventView(event));
+            }
+        }
+
+        events.sort(Comparator.comparingInt(EventView::getStartYear).thenComparing(EventView::getId));
         response.setCount(events.size());
         response.setEvents(events);
         return response;
@@ -192,6 +204,7 @@ public class HistorySearchService {
     private void buildIndex() {
         indexedEvents.clear();
         eventsById.clear();
+        worldEventsById.clear();
         suggestions.clear();
 
         Set<String> candidateSet = new HashSet<>();
@@ -208,6 +221,10 @@ public class HistorySearchService {
             candidateSet.addAll(event.getKeywords());
         }
 
+        for (WorldHistoryEvent event : worldEvents) {
+            worldEventsById.put(event.getId(), event);
+        }
+
         candidateSet.stream()
             .filter(item -> !item.isBlank() && item.length() >= 2)
             .sorted(Comparator.comparingInt(String::length).thenComparing(item -> item))
@@ -216,6 +233,48 @@ public class HistorySearchService {
 
         chinaEvents.sort(Comparator.comparingInt(ChinaHistoryEvent::getStartYear).thenComparing(ChinaHistoryEvent::getId));
         worldEvents.sort(Comparator.comparingInt(WorldHistoryEvent::getStartYear).thenComparing(WorldHistoryEvent::getId));
+    }
+
+    private EventView toTimelineEventView(ChinaHistoryEvent event) {
+        EventView view = new EventView();
+        view.setId(event.getId());
+        view.setTitle(event.getTitle());
+        view.setDynasty(defaultString(event.getDynasty()));
+        view.setCategory(defaultString(event.getCategory()));
+        view.setStartYear(event.getStartYear());
+        view.setEndYear(event.getEndYear());
+        view.setPeriod(periodLabel(event.getStartYear(), event.getEndYear()));
+        view.setTimelineScope("china");
+        return view;
+    }
+
+    private EventView toTimelineEventView(WorldHistoryEvent event) {
+        EventView view = new EventView();
+        view.setId(event.getId());
+        view.setTitle(event.getTitle());
+        view.setStartYear(event.getStartYear());
+        view.setEndYear(event.getEndYear());
+        view.setPeriod(periodLabel(event.getStartYear(), event.getEndYear()));
+        view.setRegion(defaultString(event.getRegion()));
+        view.setTimelineScope("world");
+        return view;
+    }
+
+    private EventView toWorldEventView(WorldHistoryEvent event) {
+        EventView view = new EventView();
+        view.setId(event.getId());
+        view.setTitle(event.getTitle());
+        view.setStartYear(event.getStartYear());
+        view.setEndYear(event.getEndYear());
+        view.setPeriod(periodLabel(event.getStartYear(), event.getEndYear()));
+        view.setRegion(defaultString(event.getRegion()));
+        view.setSummary(defaultString(event.getSummary()));
+        view.setAuditStatus(defaultString(event.getAuditStatus()));
+        view.setLastVerifiedAt(defaultString(event.getLastVerifiedAt()));
+        view.setSources(event.getSources());
+        view.setTimelineScope("world");
+        view.setCategory("世界历史");
+        return view;
     }
 
     private String buildSearchBlob(ChinaHistoryEvent event) {
@@ -244,112 +303,98 @@ public class HistorySearchService {
     }
 
     private double score(IndexedEvent indexed, String rawQuery, String normalizedQuery) {
-        ChinaHistoryEvent event = indexed.event;
-        double score = event.getImportance() * 14;
-
         if (normalizedQuery.isBlank()) {
-            return score;
+            return indexed.event.getImportance() * 10;
         }
 
-        String title = normalize(event.getTitle());
-        String aliases = normalize(String.join(" ", event.getAliases()));
-        String keywords = normalize(String.join(" ", event.getKeywords()));
-        String figures = normalize(String.join(" ", event.getFigures()));
-        String dynasty = normalize(event.getDynasty());
-        String blob = indexed.searchable;
+        double score = 0;
+        ChinaHistoryEvent event = indexed.event;
+        String blob = indexed.blob;
 
-        if (title.contains(normalizedQuery)) {
-            score += 80;
-        }
-        if (aliases.contains(normalizedQuery)) {
+        if (normalize(defaultString(event.getTitle())).contains(normalizedQuery)) {
             score += 60;
         }
-        if (keywords.contains(normalizedQuery)) {
-            score += 55;
+        if (normalize(defaultString(event.getDynasty())).contains(normalizedQuery)) {
+            score += 18;
         }
-        if (figures.contains(normalizedQuery)) {
-            score += 52;
-        }
-        if (dynasty.contains(normalizedQuery)) {
-            score += 48;
-        }
-        if (blob.contains(normalizedQuery)) {
-            score += 30;
+        if (normalize(defaultString(event.getCategory())).contains(normalizedQuery)) {
+            score += 14;
         }
 
-        for (String token : SPLIT_PATTERN.split(rawQuery.toLowerCase(Locale.ROOT))) {
-            String piece = normalize(token);
-            if (piece.length() < 2) {
+        for (String alias : event.getAliases()) {
+            if (normalize(alias).contains(normalizedQuery)) {
+                score += 16;
+                break;
+            }
+        }
+        for (String figure : event.getFigures()) {
+            if (normalize(figure).contains(normalizedQuery)) {
+                score += 12;
+                break;
+            }
+        }
+        for (String tag : event.getTags()) {
+            if (normalize(tag).contains(normalizedQuery)) {
+                score += 8;
+                break;
+            }
+        }
+
+        String[] tokens = SPLIT_PATTERN.split(rawQuery.trim());
+        for (String token : tokens) {
+            String normalizedToken = normalize(token);
+            if (normalizedToken.isBlank()) {
                 continue;
             }
-            if (title.contains(piece)) {
-                score += 18;
-            } else if (blob.contains(piece)) {
-                score += 9;
+            if (blob.contains(normalizedToken)) {
+                score += 6;
             }
         }
 
-        score += overlapRatio(normalizedQuery, blob) * 20;
-
-        List<Integer> years = extractYears(rawQuery);
-        for (Integer year : years) {
-            int low = Math.min(event.getStartYear(), event.getEndYear());
-            int high = Math.max(event.getStartYear(), event.getEndYear());
-            if (year >= low && year <= high) {
-                score += 70;
-                continue;
-            }
-
-            int distance = Math.min(Math.abs(year - low), Math.abs(year - high));
-            score += Math.max(0, 36 - distance / 10.0);
+        Integer year = extractYear(rawQuery);
+        if (year != null && event.getStartYear() <= year && event.getEndYear() >= year) {
+            score += 28;
         }
 
-        return Math.round(score * 1000.0) / 1000.0;
+        score += event.getImportance() * 10;
+        return score;
     }
 
-    private List<WorldContextView> getWorldContext(int startYear, int endYear, int limit, int window) {
-        int low = Math.min(startYear, endYear);
-        int high = Math.max(startYear, endYear);
-        double center = (low + high) / 2.0;
+    private Integer extractYear(String query) {
+        Matcher matcher = YEAR_PATTERN.matcher(defaultString(query));
+        if (matcher.find()) {
+            return Integer.parseInt(matcher.group());
+        }
+        return null;
+    }
 
-        List<WorldRankRow> scored = new ArrayList<>();
+    private List<WorldContextView> getWorldContext(int startYear, int endYear, int limit, int tolerance) {
+        List<WorldContextView> context = new ArrayList<>();
+        int rangeStart = startYear - tolerance;
+        int rangeEnd = endYear + tolerance;
         for (WorldHistoryEvent event : worldEvents) {
-            int worldLow = Math.min(event.getStartYear(), event.getEndYear());
-            int worldHigh = Math.max(event.getStartYear(), event.getEndYear());
-
-            boolean intersects = !(worldHigh < (low - window) || worldLow > (high + window));
-            if (!intersects) {
-                continue;
+            boolean overlap = event.getStartYear() <= rangeEnd && event.getEndYear() >= rangeStart;
+            if (overlap) {
+                WorldContextView view = new WorldContextView();
+                view.setId(event.getId());
+                view.setTitle(event.getTitle());
+                view.setRegion(event.getRegion());
+                view.setPeriod(periodLabel(event.getStartYear(), event.getEndYear()));
+                view.setStartYear(event.getStartYear());
+                view.setEndYear(event.getEndYear());
+                view.setSummary(defaultString(event.getSummary()));
+                context.add(view);
             }
-
-            double worldCenter = (worldLow + worldHigh) / 2.0;
-            double distance = Math.abs(center - worldCenter);
-            double score = Math.max(0.1, 120 - distance);
-            scored.add(new WorldRankRow(score, event));
         }
 
-        scored.sort(
-            Comparator.comparingDouble(WorldRankRow::score).reversed()
-                .thenComparingInt(row -> row.event().getStartYear())
-        );
-
-        List<WorldContextView> views = new ArrayList<>();
-        for (int i = 0; i < Math.min(limit, scored.size()); i++) {
-            WorldHistoryEvent event = scored.get(i).event();
-            WorldContextView view = new WorldContextView();
-            view.setId(event.getId());
-            view.setTitle(event.getTitle());
-            view.setRegion(defaultString(event.getRegion()));
-            view.setStartYear(event.getStartYear());
-            view.setEndYear(event.getEndYear());
-            view.setPeriod(periodLabel(event.getStartYear(), event.getEndYear()));
-            view.setSummary(defaultString(event.getSummary()));
-            views.add(view);
+        context.sort(Comparator.comparingInt(WorldContextView::getStartYear).thenComparing(WorldContextView::getId));
+        if (context.size() > limit) {
+            return new ArrayList<>(context.subList(0, limit));
         }
-        return views;
+        return context;
     }
 
-    private EventView toEventView(ChinaHistoryEvent event, double relevance, boolean includeKeywords) {
+    private EventView toEventView(ChinaHistoryEvent event, double relevance, boolean includeFullFields) {
         EventView view = new EventView();
         view.setId(event.getId());
         view.setTitle(event.getTitle());
@@ -358,87 +403,42 @@ public class HistorySearchService {
         view.setPeriod(periodLabel(event.getStartYear(), event.getEndYear()));
         view.setStartYear(event.getStartYear());
         view.setEndYear(event.getEndYear());
-        view.setLocation(defaultString(event.getLocation()));
         view.setSummary(defaultString(event.getSummary()));
         view.setImpact(defaultString(event.getImpact()));
+        view.setLocation(defaultString(event.getLocation()));
         view.setFigures(event.getFigures());
         view.setTags(event.getTags());
         view.setAliases(event.getAliases());
+        view.setKeywords(event.getKeywords());
         view.setAuditStatus(defaultString(event.getAuditStatus()));
         view.setLastVerifiedAt(defaultString(event.getLastVerifiedAt()));
         view.setSources(event.getSources());
         view.setRelevance(relevance);
-        if (includeKeywords) {
-            view.setKeywords(event.getKeywords());
+        view.setTimelineScope("china");
+
+        if (!includeFullFields) {
+            view.setAliases(List.of());
+            view.setKeywords(List.of());
+            view.setSources(List.of());
         }
         return view;
     }
 
-    private List<String> featuredSuggestions(int limit) {
-        List<String> featured = List.of(
-            "秦始皇", "丝绸之路", "安史之乱", "靖康之变", "甲午战争", "辛亥革命",
-            "改革开放", "香港回归", "WTO", "五四运动", "鸦片战争", "郑和下西洋"
-        );
-
-        List<String> merged = new ArrayList<>(featured);
-        for (String item : suggestions) {
-            if (!merged.contains(item)) {
-                merged.add(item);
-            }
-            if (merged.size() >= limit) {
-                break;
-            }
-        }
-        if (merged.size() > limit) {
-            return merged.subList(0, limit);
-        }
-        return merged;
-    }
-
-    private List<Integer> extractYears(String text) {
-        List<Integer> years = new ArrayList<>();
-        Matcher matcher = YEAR_PATTERN.matcher(defaultString(text));
-        while (matcher.find()) {
-            try {
-                years.add(Integer.parseInt(matcher.group()));
-            } catch (NumberFormatException ignore) {
-                // ignore malformed token
-            }
-        }
-        return years;
-    }
-
-    private double overlapRatio(String queryText, String targetText) {
-        if (queryText == null || queryText.isBlank() || targetText == null || targetText.isBlank()) {
-            return 0;
-        }
-
-        Set<Character> queryChars = new HashSet<>();
-        for (char c : queryText.toCharArray()) {
-            queryChars.add(c);
-        }
-
-        Set<Character> targetChars = new HashSet<>();
-        for (char c : targetText.toCharArray()) {
-            targetChars.add(c);
-        }
-
-        if (queryChars.isEmpty()) {
-            return 0;
-        }
-
-        int overlap = 0;
-        for (Character c : queryChars) {
-            if (targetChars.contains(c)) {
-                overlap++;
-            }
-        }
-        return overlap / (double) queryChars.size();
-    }
-
     private String normalize(String text) {
-        String value = defaultString(text).toLowerCase(Locale.ROOT).trim();
-        return PUNCT_PATTERN.matcher(value).replaceAll("");
+        String lower = defaultString(text).toLowerCase(Locale.ROOT).trim();
+        return PUNCT_PATTERN.matcher(lower).replaceAll("");
+    }
+
+    private String normalizeScope(String scope) {
+        String value = defaultString(scope).trim().toLowerCase(Locale.ROOT);
+        if (value.equals("world") || value.equals("all")) {
+            return value;
+        }
+        return "china";
+    }
+
+    private String defaultString(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private String periodLabel(int startYear, int endYear) {
@@ -450,18 +450,45 @@ public class HistorySearchService {
 
     private String yearLabel(int year) {
         if (year < 0) {
-            return "公元前" + Math.abs(year);
+            return Math.abs(year) + " BCE";
         }
-        return "公元" + year;
+        if (year == 0) {
+            return "0";
+        }
+        return String.valueOf(year);
     }
 
-    private String defaultString(String value) {
-        return value == null ? "" : value;
+    private List<String> featuredSuggestions(int limit) {
+        List<String> featured = List.of(
+            "秦始皇",
+            "丝绸之路",
+            "安史之乱",
+            "靖康之变",
+            "甲午战争",
+            "辛亥革命",
+            "改革开放",
+            "香港回归",
+            "WTO",
+            "五四运动",
+            "鸦片战争",
+            "郑和下西洋"
+        );
+        List<String> mixed = new ArrayList<>(featured);
+        for (String item : suggestions) {
+            if (!mixed.contains(item)) {
+                mixed.add(item);
+            }
+            if (mixed.size() >= limit) {
+                break;
+            }
+        }
+        if (mixed.size() > limit) {
+            return new ArrayList<>(mixed.subList(0, limit));
+        }
+        return mixed;
     }
 
-    private record IndexedEvent(ChinaHistoryEvent event, String searchable) {}
+    private record IndexedEvent(ChinaHistoryEvent event, String blob) {}
 
     private record ScoreRow(double score, ChinaHistoryEvent event) {}
-
-    private record WorldRankRow(double score, WorldHistoryEvent event) {}
 }

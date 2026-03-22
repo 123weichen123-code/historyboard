@@ -8,21 +8,36 @@ const detailCard = document.getElementById("detailCard");
 const worldTimeline = document.getElementById("worldTimeline");
 const timeStrip = document.getElementById("timeStrip");
 const stripMeta = document.getElementById("stripMeta");
+const scopeTabs = document.querySelectorAll(".scope-tab");
+const timelineTagFilter = document.getElementById("timelineTagFilter");
+const timelineYearFilter = document.getElementById("timelineYearFilter");
 
 const state = {
   query: "",
   results: [],
   selectedId: "",
   selectedTitle: "",
+  selectedSource: "china",
   quickQueries: [],
   timeline: [],
+  timelineScope: "china",
   timelineDensity: 1,
+  timelineTagFilter: "",
+  timelineYearFilter: "all",
 };
 
 const TIMELINE_DENSITY = {
   0.75: 210,
   1: 280,
   1.4: 360,
+};
+
+const YEAR_RANGES = {
+  all: null,
+  ancient: { min: -3000, max: 220 },
+  medieval: { min: 221, max: 1368 },
+  early_modern: { min: 1369, max: 1911 },
+  modern: { min: 1912, max: 9999 },
 };
 
 async function getJson(url) {
@@ -45,15 +60,28 @@ function getEventStartYear(event) {
 }
 
 function getEventEndYear(event) {
-  return normalizeYear(event.end_year ?? event.endYear ?? event.year);
+  return normalizeYear(event.end_year ?? event.endYear ?? event.year ?? getEventStartYear(event));
 }
 
 function getEventPeriodLabel(event) {
   return event.period || "年份待补充";
 }
 
-function getTimelineEventLabel(event) {
-  return event.dynasty || event.category || "历史事件";
+function getEventScope(event) {
+  return event.timeline_scope || event.timelineScope || "china";
+}
+
+function getEventMetaLabel(event) {
+  if (getEventScope(event) === "world") {
+    return event.region || event.category || "世界历史";
+  }
+  return event.dynasty || event.category || "中国历史";
+}
+
+function setScopeTabState() {
+  scopeTabs.forEach((button) => {
+    button.classList.toggle("active", button.dataset.scope === state.timelineScope);
+  });
 }
 
 function renderSuggestionChips(items) {
@@ -102,20 +130,18 @@ function renderResultList(results, fallbackUsed) {
     card.addEventListener("click", () => {
       state.selectedId = event.id;
       state.selectedTitle = event.title || "";
+      state.selectedSource = "china";
       renderResultList(state.results, fallbackUsed);
-      renderTimeStrip(state.timeline);
-      loadDetail(event.id);
+      renderTimeStrip();
+      loadDetail(event.id, "china");
     });
 
     resultList.appendChild(card);
   });
 }
 
-function renderDetail(detail) {
-  state.selectedTitle = detail.title || state.selectedTitle;
-  renderTimeStrip(state.timeline);
-
-  const sourceList = (detail.sources || [])
+function buildSourceList(detail) {
+  return (detail.sources || [])
     .slice(0, 5)
     .map((source) => {
       const name = source.source_name || source.sourceName || "来源";
@@ -127,7 +153,10 @@ function renderDetail(detail) {
       return `<li>${name}: ${title || "待补充"}</li>`;
     })
     .join("");
+}
 
+function renderChinaDetail(detail) {
+  const sourceList = buildSourceList(detail);
   detailCard.classList.remove("empty");
   detailCard.innerHTML = `
     <header>
@@ -139,6 +168,22 @@ function renderDetail(detail) {
     <p><strong>历史影响：</strong>${detail.impact || "待补充"}</p>
     <p><strong>关键人物：</strong>${(detail.figures || []).join(" / ") || "待补充"}</p>
     <p><strong>关联标签：</strong>${(detail.tags || []).join(" / ") || "待补充"}</p>
+    <p><strong>审校状态：</strong>${detail.audit_status || detail.auditStatus || "UNVERIFIED"}${detail.last_verified_at || detail.lastVerifiedAt ? ` · ${detail.last_verified_at || detail.lastVerifiedAt}` : ""}</p>
+    ${sourceList ? `<p><strong>引用来源：</strong></p><ul>${sourceList}</ul>` : ""}
+  `;
+}
+
+function renderWorldDetail(detail) {
+  const sourceList = buildSourceList(detail);
+  detailCard.classList.remove("empty");
+  detailCard.innerHTML = `
+    <header>
+      <p class="label">${detail.region || "世界历史"} · 世界事件</p>
+      <h3>${detail.title}</h3>
+      <p class="period">${detail.period}</p>
+    </header>
+    <p>${detail.summary || "暂无世界事件摘要。"}</p>
+    <p><strong>区域：</strong>${detail.region || "待补充"}</p>
     <p><strong>审校状态：</strong>${detail.audit_status || detail.auditStatus || "UNVERIFIED"}${detail.last_verified_at || detail.lastVerifiedAt ? ` · ${detail.last_verified_at || detail.lastVerifiedAt}` : ""}</p>
     ${sourceList ? `<p><strong>引用来源：</strong></p><ul>${sourceList}</ul>` : ""}
   `;
@@ -176,7 +221,6 @@ function buildTimelineScale(events) {
   const min = Math.min(...years);
   const max = Math.max(...years);
   const span = Math.max(max - min, 1);
-
   return { min, max, span };
 }
 
@@ -189,29 +233,82 @@ function getYearTickStep(span) {
   return 10;
 }
 
+function getFilteredTimelineEvents() {
+  const range = YEAR_RANGES[state.timelineYearFilter];
+
+  return state.timeline.filter((event) => {
+    const scope = getEventScope(event);
+    if (state.timelineScope !== "all" && scope !== state.timelineScope) {
+      return false;
+    }
+
+    const tag = getEventMetaLabel(event);
+    if (state.timelineTagFilter && tag !== state.timelineTagFilter) {
+      return false;
+    }
+
+    if (range) {
+      const start = getEventStartYear(event);
+      const end = getEventEndYear(event);
+      if (typeof start !== "number" || typeof end !== "number") {
+        return false;
+      }
+      if (end < range.min || start > range.max) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+function rebuildTimelineTagFilter() {
+  const previous = state.timelineTagFilter;
+  const values = state.timeline
+    .filter((event) => state.timelineScope === "all" || getEventScope(event) === state.timelineScope)
+    .map((event) => getEventMetaLabel(event))
+    .filter(Boolean);
+
+  const unique = Array.from(new Set(values)).sort((a, b) => a.localeCompare(b, "zh-CN"));
+  timelineTagFilter.innerHTML = '<option value="">全部</option>';
+
+  unique.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    timelineTagFilter.appendChild(option);
+  });
+
+  if (previous && unique.includes(previous)) {
+    timelineTagFilter.value = previous;
+  } else {
+    state.timelineTagFilter = "";
+    timelineTagFilter.value = "";
+  }
+}
+
 function createTimelineHeader(events) {
   const header = document.createElement("div");
+  const scopeLabel = state.timelineScope === "china" ? "中国单轴" : state.timelineScope === "world" ? "世界单轴" : "中外并行";
   header.className = "timeline-toolbar";
   header.innerHTML = `
     <div>
-      <p class="timeline-kicker">可视化时间轴</p>
-      <p class="timeline-helper">沿一条连续时间轴查看关键节点；点击节点即可跳转对应事件。</p>
+      <p class="timeline-kicker">${scopeLabel}</p>
+      <p class="timeline-helper">支持单独查看中国时间轴、世界时间轴，或把两者放到同一条轴线上并行对照。</p>
     </div>
     <div class="timeline-controls" role="group" aria-label="时间轴密度切换">
       <button type="button" class="ghost timeline-density-btn" data-density="0.75">紧凑</button>
-      <button type="button" class="ghost timeline-density-btn active" data-density="1">标准</button>
+      <button type="button" class="ghost timeline-density-btn" data-density="1">标准</button>
       <button type="button" class="ghost timeline-density-btn" data-density="1.4">展开</button>
     </div>
   `;
 
   header.querySelectorAll(".timeline-density-btn").forEach((button) => {
     const density = Number(button.dataset.density || 1);
-    if (density === state.timelineDensity) {
-      button.classList.add("active");
-    }
+    button.classList.toggle("active", density === state.timelineDensity);
     button.addEventListener("click", () => {
       state.timelineDensity = density;
-      renderTimeStrip(events);
+      renderTimeStrip();
     });
   });
 
@@ -225,20 +322,33 @@ function renderTimelineFallback(events) {
   events.forEach((event) => {
     const item = document.createElement("button");
     item.type = "button";
-    item.className = "strip-item";
+    item.className = `strip-item ${getEventScope(event)}`;
     item.innerHTML = `
       <span class="strip-year">${getEventPeriodLabel(event)}</span>
       <strong>${event.title}</strong>
-      <span>${event.dynasty || ""}</span>
+      <span>${getEventMetaLabel(event)}</span>
     `;
     item.addEventListener("click", () => {
-      searchInput.value = event.title;
-      runSearch(event.title);
+      handleTimelineEventClick(event);
     });
     grid.appendChild(item);
   });
 
   timeStrip.appendChild(grid);
+}
+
+function handleTimelineEventClick(event) {
+  state.selectedId = event.id;
+  state.selectedTitle = event.title || "";
+  state.selectedSource = getEventScope(event);
+  renderTimeStrip();
+
+  if (state.selectedSource === "world") {
+    loadDetail(event.id, "world");
+  } else {
+    searchInput.value = event.title;
+    runSearch(event.title);
+  }
 }
 
 function renderTimelineAxis(events, scale) {
@@ -266,23 +376,21 @@ function renderTimelineAxis(events, scale) {
     const startYear = getEventStartYear(event);
     const fallbackPosition = events.length === 1 ? 50 : (index / (events.length - 1)) * 100;
     const position = typeof startYear === "number" ? ((startYear - scale.min) / scale.span) * 100 : fallbackPosition;
+    const isActive = state.selectedSource === getEventScope(event) && state.selectedTitle === event.title;
     const node = document.createElement("button");
-    const isActive = state.selectedTitle && state.selectedTitle === event.title;
     node.type = "button";
-    node.className = `timeline-node ${index % 2 === 0 ? "upper" : "lower"} ${isActive ? "active" : ""}`;
+    node.className = `timeline-node ${index % 2 === 0 ? "upper" : "lower"} ${getEventScope(event)} ${isActive ? "active" : ""}`;
     node.style.left = `${Math.min(Math.max(position, 0), 100)}%`;
     node.innerHTML = `
       <span class="timeline-node-dot"></span>
       <span class="timeline-node-card">
-        <span class="timeline-node-era">${getTimelineEventLabel(event)}</span>
+        <span class="timeline-node-scope">${getEventScope(event) === "world" ? "WORLD" : "CHINA"}</span>
+        <span class="timeline-node-era">${getEventMetaLabel(event)}</span>
         <strong>${event.title}</strong>
         <span class="timeline-node-period">${getEventPeriodLabel(event)}</span>
       </span>
     `;
-    node.addEventListener("click", () => {
-      searchInput.value = event.title;
-      runSearch(event.title);
-    });
+    node.addEventListener("click", () => handleTimelineEventClick(event));
     rail.appendChild(node);
   });
 
@@ -297,16 +405,20 @@ function renderTimelineAxis(events, scale) {
   }
 }
 
-function renderTimeStrip(events) {
+function renderTimeStrip() {
   timeStrip.innerHTML = "";
+  rebuildTimelineTagFilter();
 
+  const events = getFilteredTimelineEvents();
   if (!events.length) {
-    stripMeta.textContent = "暂无时间轴数据";
-    timeStrip.innerHTML = '<p class="empty-text">暂无可展示的历史节点。</p>';
+    stripMeta.textContent = "当前筛选条件下暂无时间轴数据";
+    timeStrip.innerHTML = '<p class="empty-text">换个范围、标签或年份试试。</p>';
     return;
   }
 
-  stripMeta.textContent = `${events.length} 个中国历史节点，可按时间连续浏览`;
+  const chinaCount = events.filter((event) => getEventScope(event) === "china").length;
+  const worldCount = events.length - chinaCount;
+  stripMeta.textContent = `当前展示 ${events.length} 个节点${state.timelineScope === "all" ? `（中国 ${chinaCount} / 世界 ${worldCount}）` : ""}`;
   timeStrip.appendChild(createTimelineHeader(events));
 
   const scale = buildTimelineScale(events);
@@ -318,10 +430,20 @@ function renderTimeStrip(events) {
   renderTimelineAxis(events, scale);
 }
 
-async function loadDetail(eventId) {
+async function loadDetail(eventId, source = "china") {
   try {
-    const detail = await getJson(`/api/history/events/${eventId}`);
-    renderDetail(detail);
+    const detail = await getJson(`/api/history/events/${eventId}?source=${source}`);
+    state.selectedSource = source;
+    state.selectedTitle = detail.title || state.selectedTitle;
+    renderTimeStrip();
+
+    if (source === "world") {
+      renderWorldDetail(detail);
+      renderWorldTimeline([]);
+      return;
+    }
+
+    renderChinaDetail(detail);
     renderWorldTimeline(detail.world_context || []);
   } catch (error) {
     detailCard.classList.remove("empty");
@@ -340,10 +462,12 @@ async function runSearch(rawQuery) {
     if (!state.selectedId && state.results.length) {
       state.selectedId = state.results[0].id;
       state.selectedTitle = state.results[0].title || "";
+      state.selectedSource = "china";
     }
     if (state.results.length && !state.results.some((event) => event.id === state.selectedId)) {
       state.selectedId = state.results[0].id;
       state.selectedTitle = state.results[0].title || "";
+      state.selectedSource = "china";
     }
 
     renderResultList(state.results, Boolean(payload.fallback_used));
@@ -352,8 +476,9 @@ async function runSearch(rawQuery) {
     const selected = state.results.find((event) => event.id === state.selectedId);
     if (selected) {
       state.selectedTitle = selected.title || "";
-      renderTimeStrip(state.timeline);
-      await loadDetail(selected.id);
+      state.selectedSource = "china";
+      renderTimeStrip();
+      await loadDetail(selected.id, "china");
     } else {
       detailCard.classList.add("empty");
       detailCard.innerHTML = "请先在左侧选择一个历史事件。";
@@ -374,15 +499,16 @@ async function loadDiscover() {
   state.results = defaults.results || [];
   state.selectedId = state.results[0]?.id || "";
   state.selectedTitle = state.results[0]?.title || "";
+  state.selectedSource = "china";
   renderResultList(state.results, Boolean(defaults.fallback_used));
 
   if (state.selectedId) {
-    await loadDetail(state.selectedId);
+    await loadDetail(state.selectedId, "china");
   }
 }
 
 async function loadTimeline() {
-  const payload = await getJson("/api/history/timeline");
+  const payload = await getJson("/api/history/timeline?scope=all");
   state.timeline = (payload.events || []).slice().sort((a, b) => {
     const yearA = getEventStartYear(a);
     const yearB = getEventStartYear(b);
@@ -397,7 +523,7 @@ async function loadTimeline() {
     }
     return String(a.period || a.title).localeCompare(String(b.period || b.title), "zh-CN");
   });
-  renderTimeStrip(state.timeline);
+  renderTimeStrip();
 }
 
 function pickRandomQuery() {
@@ -408,6 +534,25 @@ function pickRandomQuery() {
   runSearch(query);
 }
 
+scopeTabs.forEach((button) => {
+  button.addEventListener("click", () => {
+    state.timelineScope = button.dataset.scope || "china";
+    state.timelineTagFilter = "";
+    setScopeTabState();
+    renderTimeStrip();
+  });
+});
+
+timelineTagFilter.addEventListener("change", (event) => {
+  state.timelineTagFilter = event.target.value;
+  renderTimeStrip();
+});
+
+timelineYearFilter.addEventListener("change", (event) => {
+  state.timelineYearFilter = event.target.value;
+  renderTimeStrip();
+});
+
 searchBtn.addEventListener("click", () => runSearch());
 randomBtn.addEventListener("click", pickRandomQuery);
 searchInput.addEventListener("keydown", (event) => {
@@ -415,6 +560,8 @@ searchInput.addEventListener("keydown", (event) => {
     runSearch();
   }
 });
+
+setScopeTabState();
 
 (async function boot() {
   try {

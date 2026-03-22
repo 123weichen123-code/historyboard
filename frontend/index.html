@@ -58,8 +58,33 @@
 
       <section class="panel strip-panel">
         <div class="panel-head">
-          <h2>中国历史时间轴</h2>
+          <h2>历史时间轴</h2>
           <span id="stripMeta" class="meta"></span>
+        </div>
+        <div class="timeline-mode-bar">
+          <div class="timeline-scope-tabs" role="tablist" aria-label="时间轴范围切换">
+            <button type="button" class="ghost scope-tab active" data-scope="china">中国</button>
+            <button type="button" class="ghost scope-tab" data-scope="world">世界</button>
+            <button type="button" class="ghost scope-tab" data-scope="all">中外并行</button>
+          </div>
+          <div class="timeline-filter-bar">
+            <label class="timeline-filter">
+              <span>标签筛选</span>
+              <select id="timelineTagFilter">
+                <option value="">全部</option>
+              </select>
+            </label>
+            <label class="timeline-filter">
+              <span>年份范围</span>
+              <select id="timelineYearFilter">
+                <option value="all">全部年份</option>
+                <option value="ancient">古代（-3000 ~ 220）</option>
+                <option value="medieval">中古（221 ~ 1368）</option>
+                <option value="early_modern">近世（1369 ~ 1911）</option>
+                <option value="modern">现代（1912 ~ 至今）</option>
+              </select>
+            </label>
+          </div>
         </div>
         <div id="timeStrip" class="time-strip"></div>
       </section>

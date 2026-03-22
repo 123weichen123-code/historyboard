@@ -24,6 +24,8 @@ public class EventView {
     private List<SourceCitation> sources = new ArrayList<>();
     private double relevance;
     private List<WorldContextView> worldContext = new ArrayList<>();
+    private String timelineScope;
+    private String region;
 
     public String getId() {
         return id;
@@ -175,5 +177,21 @@ public class EventView {
 
     public void setWorldContext(List<WorldContextView> worldContext) {
         this.worldContext = worldContext == null ? new ArrayList<>() : worldContext;
+    }
+
+    public String getTimelineScope() {
+        return timelineScope;
+    }
+
+    public void setTimelineScope(String timelineScope) {
+        this.timelineScope = timelineScope;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
     }
 }

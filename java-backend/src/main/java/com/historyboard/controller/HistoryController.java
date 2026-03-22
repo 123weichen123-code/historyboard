@@ -10,13 +10,13 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.validation.annotation.Validated;
 
 @RestController
 @RequestMapping("/api")
@@ -54,8 +54,11 @@ public class HistoryController {
     }
 
     @GetMapping("/history/events/{eventId}")
-    public EventView eventDetail(@PathVariable String eventId) {
-        EventView detail = historySearchService.eventDetail(eventId);
+    public EventView eventDetail(
+        @PathVariable String eventId,
+        @RequestParam(value = "source", defaultValue = "china") String source
+    ) {
+        EventView detail = historySearchService.eventDetail(eventId, source);
         if (detail == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "事件不存在: " + eventId);
         }
@@ -63,8 +66,8 @@ public class HistoryController {
     }
 
     @GetMapping("/history/timeline")
-    public TimelineResponse timeline() {
-        return historySearchService.timeline();
+    public TimelineResponse timeline(@RequestParam(value = "scope", defaultValue = "china") String scope) {
+        return historySearchService.timeline(scope);
     }
 
     @GetMapping("/history/discover")
